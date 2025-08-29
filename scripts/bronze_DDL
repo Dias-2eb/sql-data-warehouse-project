@@ -22,7 +22,7 @@ CREATE TABLE bronze.source_crm_prd_info(
 
 DROP TABLE IF EXISTS bronze.source_crm_sales_details;
 CREATE TABLE bronze.source_crm_sales_details (
-        sls_ord_num INT,
+        sls_ord_num VARCHAR,
       	sls_prd_key VARCHAR,
       	sls_cust_id INT,
       	sls_order_dt INT,
