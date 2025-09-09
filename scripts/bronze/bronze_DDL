@@ -17,7 +17,7 @@ CREATE TABLE bronze.source_crm_prd_info(
         prd_cost INT,
         prd_line VARCHAR,
         prd_start_dt DATE,
-        prd_ent_dt DATE
+        prd_end_dt DATE
 );
 
 DROP TABLE IF EXISTS bronze.source_crm_sales_details;
