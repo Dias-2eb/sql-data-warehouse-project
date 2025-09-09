@@ -46,7 +46,7 @@ BEGIN
 	  prd_cost,
 	  prd_line,
 	  prd_start_dt,
-	  prd_ent_dt
+	  prd_end_dt
 	)
 	FROM '/var/lib/postgresql/import/prd_info.csv'
 	WITH (FORMAT csv, HEADER true);
