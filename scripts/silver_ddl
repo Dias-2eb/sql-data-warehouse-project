@@ -1,0 +1,57 @@
+DROP TABLE IF EXISTS silver.source_crm_cust_info;
+CREATE TABLE silver.source_crm_cust_info (
+        cst_id INT,
+        cst_key VARCHAR,
+        cst_firstname VARCHAR,
+        cst_lastname VARCHAR,
+        cst_marital_status VARCHAR,
+        cst_gndr VARCHAR,
+        cst_create_date DATE
+);
+
+DROP TABLE IF EXISTS silver.source_crm_prd_info;
+CREATE TABLE silver.source_crm_prd_info(
+        prd_id INT,
+        prd_key VARCHAR,
+        prd_nm VARCHAR,
+        prd_cost INT,
+        prd_line VARCHAR,
+        prd_start_dt DATE,
+        prd_ent_dt DATE
+);
+
+DROP TABLE IF EXISTS silver.source_crm_sales_details;
+CREATE TABLE silver.source_crm_sales_details (
+        sls_ord_num VARCHAR,
+      	sls_prd_key VARCHAR,
+      	sls_cust_id INT,
+      	sls_order_dt INT,
+      	sls_ship_dt INT,
+      	sls_due_dt INT,
+      	sls_sales INT,
+      	sls_quantity INT,
+      	sls_price INT
+);
+
+
+DROP TABLE IF EXISTS silver.source_erp_cust_az12;
+CREATE TABLE silver.source_erp_cust_az12 (
+        CID VARCHAR,
+        BDATE DATE,
+        GEN VARCHAR
+);
+
+DROP TABLE IF EXISTS silver.source_erp_loc_a101;
+CREATE TABLE silver.source_erp_loc_a101 (
+        CID VARCHAR,
+        CNTRY VARCHAR
+);
+
+
+DROP TABLE IF EXISTS silver.source_erp_px_cat_g1v2;
+CREATE TABLE silver.source_erp_px_cat_g1v2 (
+        ID VARCHAR,
+        CAT VARCHAR,
+        SUBCAT VARCHAR,
+        MAINTENANCE VARCHAR
+);
