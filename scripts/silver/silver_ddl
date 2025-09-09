@@ -18,7 +18,7 @@ CREATE TABLE silver.source_crm_prd_info(
         prd_cost INT,
         prd_line VARCHAR,
         prd_start_dt DATE,
-        prd_ent_dt DATE,
+        prd_end_dt DATE,
         dwh_create_date DATE default current_date
 );
 
