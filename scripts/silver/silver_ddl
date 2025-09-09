@@ -6,7 +6,8 @@ CREATE TABLE silver.source_crm_cust_info (
         cst_lastname VARCHAR,
         cst_marital_status VARCHAR,
         cst_gndr VARCHAR,
-        cst_create_date DATE
+        cst_create_date DATE,
+        dwh_create_date DATE default current_date
 );
 
 DROP TABLE IF EXISTS silver.source_crm_prd_info;
@@ -17,7 +18,8 @@ CREATE TABLE silver.source_crm_prd_info(
         prd_cost INT,
         prd_line VARCHAR,
         prd_start_dt DATE,
-        prd_ent_dt DATE
+        prd_ent_dt DATE,
+        dwh_create_date DATE default current_date
 );
 
 DROP TABLE IF EXISTS silver.source_crm_sales_details;
@@ -30,7 +32,8 @@ CREATE TABLE silver.source_crm_sales_details (
       	sls_due_dt INT,
       	sls_sales INT,
       	sls_quantity INT,
-      	sls_price INT
+      	sls_price INT,
+        dwh_create_date DATE default current_date
 );
 
 
@@ -38,13 +41,15 @@ DROP TABLE IF EXISTS silver.source_erp_cust_az12;
 CREATE TABLE silver.source_erp_cust_az12 (
         CID VARCHAR,
         BDATE DATE,
-        GEN VARCHAR
+        GEN VARCHAR,
+        dwh_create_date DATE default current_date
 );
 
 DROP TABLE IF EXISTS silver.source_erp_loc_a101;
 CREATE TABLE silver.source_erp_loc_a101 (
         CID VARCHAR,
-        CNTRY VARCHAR
+        CNTRY VARCHAR,
+        dwh_create_date DATE default current_date
 );
 
 
@@ -53,5 +58,6 @@ CREATE TABLE silver.source_erp_px_cat_g1v2 (
         ID VARCHAR,
         CAT VARCHAR,
         SUBCAT VARCHAR,
-        MAINTENANCE VARCHAR
+        MAINTENANCE VARCHAR,
+        dwh_create_date DATE default current_date
 );
