@@ -90,5 +90,22 @@ select
 			else sls_price
 		end as sls_price
 from bronze.source_crm_sales_details
+-------------------------------------------------------
+insert into silver.source_erp_cust_az12(
+	cid,
+	bdate,
+	gen)
+select 
+	case when cid like 'NAS%' then substring(cid, 4)
+		else cid
+	end as cid,
+	case when bdate > current_date then NULL
+	else bdate
+	end as bdat,
+	case when upper(trim(gen)) in ('F', 'FEMALE') then 'Female'
+		 when upper(trim(gen)) in  ('M', 'MALE') then 'Male'
+		else 'n/a'
+	end as gen
+from bronze.source_erp_cust_az12
 	
 	
