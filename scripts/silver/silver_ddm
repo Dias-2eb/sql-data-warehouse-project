@@ -1,137 +1,236 @@
+create or replace procedure silver.load_silver ()
+language plpgsql
+as $$
+declare
+    rows_loaded BIGINT;
+    start_time TIMESTAMP;
+    end_time   TIMESTAMP;
+    elapsed    INTERVAL;
+    elapsed_sec BIGINT;
+begin
+    RAISE NOTICE '--------------------------------%Loading Silver layer', chr(10);
+    RAISE NOTICE '--------------------------------';
+    RAISE NOTICE '>> Loading CRM Tables';
 
------------------------------------------------
-insert into silver.source_crm_cust_info (
-	cst_id,
-	cst_key,
-	cst_firstname,
-	cst_lastname,
-	cst_marital_status,
-	cst_gndr,
-	cst_create_date)
-select 
-cst_id,
-cst_key,
-trim(cst_firstname) as cst_firstname,
-trim(cst_lastname) as cst_lastname,
-case when UPPER(cst_marital_status ) = 'S' then 'Single'
-		when UPPER(cst_marital_status) = 'M' then 'Married'
-		else 'n/a'
-end cst_marital_status,
-	case when UPPER(cst_gndr) = 'F' then 'Female'
-		when UPPER(cst_gndr) = 'M' then 'Male'
-		else 'n/a'
-end cst_gndr,
-cst_create_date
-	from (
-select * ,
-row_number() over (partition by cst_id order by cst_create_date DESC) as flag_last
-from bronze.source_crm_cust_info)
-where flag_last = 1 and cst_id is not NULL
+    -------------------------------------------------------------------------
+    -- silver.source_crm_cust_info
+    start_time := current_timestamp;
 
+    TRUNCATE silver.source_crm_cust_info;
 
+    INSERT INTO silver.source_crm_cust_info (
+        cst_id,
+        cst_key,
+        cst_firstname,
+        cst_lastname,
+        cst_marital_status,
+        cst_gndr,
+        cst_create_date
+    )
+    SELECT
+        cst_id,
+        cst_key,
+        trim(cst_firstname) AS cst_firstname,
+        trim(cst_lastname)  AS cst_lastname,
+        CASE UPPER(cst_marital_status)
+            WHEN 'S' THEN 'Single'
+            WHEN 'M' THEN 'Married'
+            ELSE 'n/a'
+        END AS cst_marital_status,
+        CASE UPPER(cst_gndr)
+            WHEN 'F' THEN 'Female'
+            WHEN 'M' THEN 'Male'
+            ELSE 'n/a'
+        END AS cst_gndr,
+        cst_create_date
+    FROM (
+        SELECT *,
+               row_number() OVER (PARTITION BY cst_id ORDER BY cst_create_date DESC) AS flag_last
+        FROM bronze.source_crm_cust_info
+    ) AS t
+    WHERE flag_last = 1
+      AND cst_id IS NOT NULL;
 
------------------------------------------------
-insert into silver.source_crm_prd_info(
-		prd_id,
-		cat_id,
-		prd_key,
-		prd_nm,
-		prd_cost,
-		prd_line,
-		prd_start_dt,
-		prd_end_dt
-)
-select prd_id,
-		replace(substring(prd_key, 1, 5), '-', '_') as cat_id,
-		substring(prd_key, 7, LENGTH(prd_key)) as prd_key,
-		prd_nm,
-		COALESCE(prd_cost, 0) as prd_cost,
-		case UPPER(TRIM(prd_line))
-			when 'M' then 'Mountain'
-			when 'R' then 'Road'
-			when 's' then 'Other Sales'
-			when 'T' then 'Touring'
-			else 'n/a'
-		end as prd_line,
-		cast(prd_start_dt as DATE) as prd_start_dt,
-		cast(lead(prd_start_dt) over (partition by prd_key order by prd_start_dt)-1 as DATE) as prd_end_dt
-from bronze.source_crm_prd_info
-----------------------------------------------
-insert into silver.source_crm_sales_details (
-		sls_ord_num,
-		sls_prd_key,
-		sls_cust_id,
-		sls_order_dt,
-		sls_ship_dt,
-		sls_due_dt,
-		sls_sales,
-		sls_quantity,
-		sls_price)
-select 
-		sls_ord_num,
-		sls_prd_key,
-		sls_cust_id,
-		case when sls_order_dt = 0 or length(cast(sls_order_dt as TEXT)) != 8 then NULL
-			else cast(cast(sls_order_dt as VARCHAR) as DATE)
-		end sls_order_dt,
-		case when sls_ship_dt = 0 or length(cast(sls_ship_dt as TEXT)) != 8 then NULL
-			else cast(cast(sls_ship_dt as VARCHAR) as DATE)
-		end sls_ship_dt,
-		case when sls_due_dt = 0 or length(cast(sls_due_dt as TEXT)) != 8 then NULL
-			else cast(cast(sls_due_dt as VARCHAR) as DATE)
-		end sls_due_dt,
-		case when sls_sales is null or sls_sales <= 0 or sls_sales != sls_quantity * ABS(sls_price)
-			then sls_quantity * ABS(sls_price)
-			else sls_sales
-		end as sls_sales,
-		sls_quantity,
-		case when sls_price is null or sls_price <= 0 
-			then sls_sales/nullif(sls_quantity, 0)
-			else sls_price
-		end as sls_price
-from bronze.source_crm_sales_details
--------------------------------------------------------
-insert into silver.source_erp_cust_az12(
-	cid,
-	bdate,
-	gen)
-select 
-	case when cid like 'NAS%' then substring(cid, 4)
-		else cid
-	end as cid,
-	case when bdate > current_date then NULL
-	else bdate
-	end as bdat,
-	case when upper(trim(gen)) in ('F', 'FEMALE') then 'Female'
-		 when upper(trim(gen)) in  ('M', 'MALE') then 'Male'
-		else 'n/a'
-	end as gen
-from bronze.source_erp_cust_az12
+    GET DIAGNOSTICS rows_loaded = ROW_COUNT;
+    end_time   := current_timestamp;
+    elapsed    := end_time - start_time;
+    elapsed_sec := EXTRACT(EPOCH FROM elapsed)::bigint;
 
+    RAISE NOTICE 'Loaded % rows into silver.source_crm_cust_info', rows_loaded;
+    RAISE NOTICE '>> Load duration: % (≈ % seconds)', elapsed, elapsed_sec;
 
+    -------------------------------------------------------------------------
+    -- silver.source_crm_prd_info
+    start_time := current_timestamp;
 
---------------------------------------------------------
-insert into silver.source_erp_loc_a101 (
-	cid,
-	cntry)
-select replace(cid, '-', '') as cid, 
-case when trim(cntry) = 'DE' then 'Germany'
-	 when trim(cntry) in ('US', 'USA') then 'United States'
-	 when trim(cntry) = '' or cntry is null then 'n/a'
-	 else trim(cntry)
-end as cntry
-from bronze.source_erp_loc_a101
---------------------------------------------------------
-insert into silver.source_erp_px_cat_g1v2(
-	id,
-	cat,
-	subcat,
-	maintenance )
-select 
-	id,
-	cat, 
-	subcat,
-	maintenance
-from bronze.source_erp_px_cat_g1v2 
-	
-	
+    TRUNCATE silver.source_crm_prd_info;
+
+    INSERT INTO silver.source_crm_prd_info (
+        prd_id,
+        cat_id,
+        prd_key,
+        prd_nm,
+        prd_cost,
+        prd_line,
+        prd_start_dt,
+        prd_end_dt
+    )
+    SELECT
+        prd_id,
+        replace(substr(prd_key, 1, 5), '-', '_') AS cat_id,
+        substr(prd_key, 7)                        AS prd_key,
+        prd_nm,
+        COALESCE(prd_cost, 0)                     AS prd_cost,
+        CASE UPPER(TRIM(prd_line))
+            WHEN 'M' THEN 'Mountain'
+            WHEN 'R' THEN 'Road'
+            WHEN 'S' THEN 'Other Sales'
+            WHEN 'T' THEN 'Touring'
+            ELSE 'n/a'
+        END AS prd_line,
+        CAST(prd_start_dt AS DATE) AS prd_start_dt,
+        CAST(lead(prd_start_dt) OVER (PARTITION BY prd_key ORDER BY prd_start_dt) - 1 AS DATE) AS prd_end_dt
+    FROM bronze.source_crm_prd_info;
+
+    GET DIAGNOSTICS rows_loaded = ROW_COUNT;
+    end_time   := current_timestamp;
+    elapsed    := end_time - start_time;
+    elapsed_sec := EXTRACT(EPOCH FROM elapsed)::bigint;
+
+    RAISE NOTICE 'Loaded % rows into silver.source_crm_prd_info', rows_loaded;
+    RAISE NOTICE '>> Load duration: % (≈ % seconds)', elapsed, elapsed_sec;
+
+    -------------------------------------------------------------------------
+    -- silver.source_crm_sales_details
+    start_time := current_timestamp;
+
+    TRUNCATE silver.source_crm_sales_details;
+
+    INSERT INTO silver.source_crm_sales_details (
+        sls_ord_num,
+        sls_prd_key,
+        sls_cust_id,
+        sls_order_dt,
+        sls_ship_dt,
+        sls_due_dt,
+        sls_sales,
+        sls_quantity,
+        sls_price
+    )
+    SELECT
+        sls_ord_num,
+        sls_prd_key,
+        sls_cust_id,
+        CASE WHEN sls_order_dt = 0 OR length(CAST(sls_order_dt AS TEXT)) <> 8 THEN NULL
+             ELSE CAST(CAST(sls_order_dt AS VARCHAR) AS DATE)
+        END AS sls_order_dt,
+        CASE WHEN sls_ship_dt  = 0 OR length(CAST(sls_ship_dt  AS TEXT)) <> 8 THEN NULL
+             ELSE CAST(CAST(sls_ship_dt  AS VARCHAR) AS DATE)
+        END AS sls_ship_dt,
+        CASE WHEN sls_due_dt   = 0 OR length(CAST(sls_due_dt   AS TEXT)) <> 8 THEN NULL
+             ELSE CAST(CAST(sls_due_dt   AS VARCHAR) AS DATE)
+        END AS sls_due_dt,
+        CASE WHEN sls_sales IS NULL OR sls_sales <= 0 OR sls_sales <> sls_quantity * ABS(sls_price)
+             THEN sls_quantity * ABS(sls_price)
+             ELSE sls_sales
+        END AS sls_sales,
+        sls_quantity,
+        CASE WHEN sls_price IS NULL OR sls_price <= 0
+             THEN sls_sales / NULLIF(sls_quantity, 0)
+             ELSE sls_price
+        END AS sls_price
+    FROM bronze.source_crm_sales_details;
+
+    GET DIAGNOSTICS rows_loaded = ROW_COUNT;
+    end_time   := current_timestamp;
+    elapsed    := end_time - start_time;
+    elapsed_sec := EXTRACT(EPOCH FROM elapsed)::bigint;
+
+    RAISE NOTICE 'Loaded % rows into silver.source_crm_sales_details', rows_loaded;
+    RAISE NOTICE '>> Load duration: % (≈ % seconds)', elapsed, elapsed_sec;
+
+    -------------------------------------------------------------------------
+    -- silver.source_erp_cust_az12
+    start_time := current_timestamp;
+
+    TRUNCATE silver.source_erp_cust_az12;
+
+    INSERT INTO silver.source_erp_cust_az12 (
+        cid,
+        bdate,
+        gen
+    )
+    SELECT
+        CASE WHEN cid LIKE 'NAS%' THEN substr(cid, 4) ELSE cid END AS cid,
+        CASE WHEN bdate > current_date THEN NULL ELSE bdate END AS bdate,
+        CASE WHEN upper(trim(gen)) IN ('F','FEMALE') THEN 'Female'
+             WHEN upper(trim(gen)) IN ('M','MALE')  THEN 'Male'
+             ELSE 'n/a'
+        END AS gen
+    FROM bronze.source_erp_cust_az12;
+
+    GET DIAGNOSTICS rows_loaded = ROW_COUNT;
+    end_time   := current_timestamp;
+    elapsed    := end_time - start_time;
+    elapsed_sec := EXTRACT(EPOCH FROM elapsed)::bigint;
+
+    RAISE NOTICE 'Loaded % rows into silver.source_erp_cust_az12', rows_loaded;
+    RAISE NOTICE '>> Load duration: % (≈ % seconds)', elapsed, elapsed_sec;
+
+    -------------------------------------------------------------------------
+    -- silver.source_erp_loc_a101
+    start_time := current_timestamp;
+
+    TRUNCATE silver.source_erp_loc_a101;
+
+    INSERT INTO silver.source_erp_loc_a101 (
+        cid,
+        cntry
+    )
+    SELECT
+        replace(cid, '-', '') AS cid,
+        CASE
+            WHEN trim(cntry) = 'DE'              THEN 'Germany'
+            WHEN trim(cntry) IN ('US','USA')     THEN 'United States'
+            WHEN trim(cntry) = '' OR cntry IS NULL THEN 'n/a'
+            ELSE trim(cntry)
+        END AS cntry
+    FROM bronze.source_erp_loc_a101;
+
+    GET DIAGNOSTICS rows_loaded = ROW_COUNT;
+    end_time   := current_timestamp;
+    elapsed    := end_time - start_time;
+    elapsed_sec := EXTRACT(EPOCH FROM elapsed)::bigint;
+
+    RAISE NOTICE 'Loaded % rows into silver.source_erp_loc_a101', rows_loaded;
+    RAISE NOTICE '>> Load duration: % (≈ % seconds)', elapsed, elapsed_sec;
+
+    -------------------------------------------------------------------------
+    -- silver.source_erp_px_cat_g1v2
+    start_time := current_timestamp;
+
+    TRUNCATE silver.source_erp_px_cat_g1v2;
+
+    INSERT INTO silver.source_erp_px_cat_g1v2 (
+        id,
+        cat,
+        subcat,
+        maintenance
+    )
+    SELECT
+        id,
+        cat,
+        subcat,
+        maintenance
+    FROM bronze.source_erp_px_cat_g1v2;
+
+    GET DIAGNOSTICS rows_loaded = ROW_COUNT;
+    end_time   := current_timestamp;
+    elapsed    := end_time - start_time;
+    elapsed_sec := EXTRACT(EPOCH FROM elapsed)::bigint;
+
+    RAISE NOTICE 'Loaded % rows into silver.source_erp_px_cat_g1v2', rows_loaded;
+    RAISE NOTICE '>> Load duration: % (≈ % seconds)', elapsed, elapsed_sec;
+
+end;
+$$;
