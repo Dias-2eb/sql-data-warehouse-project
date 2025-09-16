@@ -10,7 +10,6 @@ declare
 begin
     RAISE NOTICE '--------------------------------%Loading Silver layer', chr(10);
     RAISE NOTICE '--------------------------------';
-    RAISE NOTICE '>> Loading CRM Tables';
 
     -------------------------------------------------------------------------
     -- silver.source_crm_cust_info
