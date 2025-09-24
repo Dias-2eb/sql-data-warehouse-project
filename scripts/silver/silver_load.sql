@@ -1,3 +1,24 @@
+/*
+===============================================================================
+Stored Procedure: Load Silver Layer (Bronze -> Silver)
+===============================================================================
+Script Purpose:
+    This stored procedure handles the ETL (Extract, Transform, Load) workflow to 
+    populate the 'silver' schema with data sourced from the 'bronze' schema.
+    
+    Actions Performed:
+        - Empties existing data by truncating Silver tables.
+        - Loads cleansed and transformed records from Bronze into Silver tables.
+        
+Parameters:
+    None. 
+    This procedure does not take any parameters and does not return values.
+
+Usage Example:
+    CALL silver.load_silver();
+===============================================================================
+*/
+
 create or replace procedure silver.load_silver ()
 language plpgsql
 as $$
