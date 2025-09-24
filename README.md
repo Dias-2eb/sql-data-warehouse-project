@@ -16,7 +16,7 @@ Bronze Layer: Raw data ingested directly from CSV files into PostgreSQL.
 Silver Layer: Cleaned and standardized tables (e.g., handling nulls, applying business rules, ensuring data type consistency).
 
 Gold Layer: Final star schema (fact + dimension tables) optimized for reporting and analytics.
-
+![Data Architecture](docs/Data_model.png)
 ## Tools & Technologies
 
 Database: PostgreSQL
