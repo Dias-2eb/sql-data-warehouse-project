@@ -5,7 +5,7 @@ The project follows the Medallion Architecture (Bronze, Silver, Gold) and demons
 
 
 
-## Original Inspiration: This project was inspired by Data with Baraa, where the architecture and workflows were first demonstrated in SQL Server. Here, the project is recreated and extended using PostgreSQL.
+### Original Inspiration: This project was inspired by Data with Baraa, where the architecture and workflows were first demonstrated in SQL Server. Here, the project is recreated and extended using PostgreSQL.
 
 ## Data Architecture
 
@@ -59,21 +59,15 @@ Wrote SQL queries for KPIs (e.g., monthly revenue, customer segmentation, produc
 
 Created exploratory dashboards in DBeaver.
 
-### Example Outputs
+## Example Outputs
 
-Star Schema Example:
+### Star Schema Example:
 
 Fact Table: fact_sales
 
 Dimensions: dim_customers, dim_products, dim_date
 
-Sample Queries:
-
-Monthly revenue trends
-
-Top 10 customers by sales
-
-Product performance over time
+Sample Queries: Monthly revenue trends, Top 10 customers by sales, Product performance over time
 
 ## How to Run
 
