@@ -1,5 +1,24 @@
+/*
+===============================================================================
+DDL Script: Create Gold Views
+===============================================================================
+Script Purpose:
+    This script defines views in the 'gold' layer of the data warehouse. 
+    The Gold layer represents the finalized star schema (fact and dimension tables).
 
-create view gold.dim_customers as
+    Each view applies transformations and joins data from the Silver layer to 
+    deliver a clean, enriched, and analytics-ready dataset.
+
+Usage:
+    - Query these views directly for reporting and business intelligence.
+===============================================================================
+*/
+
+-- =============================================================================
+-- Create Dimension View: gold.dim_customers
+-- =============================================================================
+
+create or replace view gold.dim_customers as
 select 
 	row_number() over (order by ci.cst_id) as customer_key,
 	ci.cst_id as customer_id,
@@ -21,7 +40,7 @@ on ci.cst_key = la.cid
 
 
 
-create view gold.dim_product as 
+create or replace view gold.dim_product as 
 select 
 	row_number () over (order by pn.prd_start_dt, pn.prd_key) as product_key,
  	pn.prd_id as product_id,
@@ -37,11 +56,11 @@ select
 from silver.source_crm_prd_info pn
 left join silver.source_erp_px_cat_g1v2 pc
 on pn.cat_id = pc.id
-where pn.prd_end_dt is null -- filter historical data
+where pn.prd_end_dt is null 
 
 
 
-create view gold.fact_sales as 
+create or replace view gold.fact_sales as 
 select 
 	sd.sls_ord_num as order_number,
 	pr.product_key,
